@@ -1,0 +1,11 @@
+build/
+*.o
+*.elf
+*.bin
+*.img
+*.iso
+*.swp
+*.swo
+*~
+qemu.log
+*.qcow2
