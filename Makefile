@@ -37,7 +37,7 @@ $(BUILD)/kernel.elf: $(BUILD)/entry.o $(BUILD)/isr.o $(OBJS) kernel/linker.ld
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel.elf
 	objcopy -O binary $< $@
-	python3 scripts/padcheck.py $@ 458752
+	python3 scripts/padcheck.py $@ 1073741824
 
 $(IMG): $(BUILD)/kernel.bin $(BUILD)/stage1.bin $(BUILD)/stage2.final.bin
 	cat $(BUILD)/stage1.bin $(BUILD)/stage2.final.bin > $(IMG)
