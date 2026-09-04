@@ -18,6 +18,7 @@ enum {
     APP_IMGVIEW,
     APP_MUSIC,
     APP_SNAKE,
+    APP_KALEIDOSCOPE,
     APP_COUNT
 };
 

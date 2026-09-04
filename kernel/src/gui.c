@@ -94,8 +94,9 @@ static const struct { int app; const char *label; } start_items[] = {
     { APP_SETTINGS, "Settings" },
     { APP_ABOUT, "About KiKOS" },
     { APP_SNAKE, "Snake" },
+    { APP_KALEIDOSCOPE, "Kaleidoscope" },
 };
-#define N_START_ITEMS 12
+#define N_START_ITEMS 13
 
 static char start_search[32];
 static int start_search_len = 0;
@@ -245,6 +246,7 @@ Window *win_open(int app)
         case APP_IMGVIEW:  w = win_alloc(app, "Image Viewer", 640, 480); break;
         case APP_MUSIC:    w = win_alloc(app, "Music Player", 600, 500); break;
         case APP_SNAKE:    w = win_alloc(app, "Snake", 480, 400); app_snake_open(w); break;
+        case APP_KALEIDOSCOPE: w = win_alloc(app, "Kaleidoscope", 480, 400); app_kaleido_open(w); break;
         }
         if (!w) return 0;
     }
@@ -342,7 +344,7 @@ static void draw_window_chrome(Window *w)
               w->app == APP_SETTINGS ? ICON_SETTINGS : w->app == APP_AV ? ICON_SHIELD :
                w->app == APP_EDIT ? ICON_TXT : w->app == APP_SYSMON ? ICON_SETTINGS :
                w->app == APP_IMGVIEW ? ICON_IMAGE : w->app == APP_MUSIC ? ICON_MUSIC :
-               w->app == APP_SNAKE ? ICON_SNAKE : ICON_ABOUT,
+               w->app == APP_SNAKE ? ICON_SNAKE : w->app == APP_KALEIDOSCOPE ? ICON_DOODLE : ICON_ABOUT,
               r.x + r.w / 2 - 9, r.y + 6, 18);
 
     int bw = 26;
@@ -448,7 +450,8 @@ static void draw_taskbar(void)
                  app == APP_CALC ? ICON_CALC : app == APP_DOODLE ? ICON_DOODLE :
                  app == APP_AV ? ICON_SHIELD : app == APP_EDIT ? ICON_TXT :
                  app == APP_SYSMON ? ICON_SETTINGS : app == APP_IMGVIEW ? ICON_IMAGE :
-                 app == APP_MUSIC ? ICON_MUSIC : app == APP_SNAKE ? ICON_SNAKE : ICON_SETTINGS;
+                 app == APP_MUSIC ? ICON_MUSIC : app == APP_SNAKE ? ICON_SNAKE :
+                 app == APP_KALEIDOSCOPE ? ICON_DOODLE : ICON_SETTINGS;
         icon_draw(id, tr.x + 5, tr.y + 5, 26);
         gx += 46;
     }
@@ -471,7 +474,7 @@ static void draw_start_menu(void)
     if (!start_open) return;
 
     int mw = 330;
-    int items = 12;
+    int items = N_START_ITEMS;
     int mh = 52 + 44 + items * 40 + 12 + 52;
     int mx = start_btn_r.x + start_btn_r.w / 2 - mw / 2;
     int my = SH - TASKBAR_H - mh - 10;
@@ -532,6 +535,7 @@ static void draw_start_menu(void)
                  start_items[i].app == APP_IMGVIEW ? ICON_IMAGE :
                  start_items[i].app == APP_MUSIC ? ICON_MUSIC :
                  start_items[i].app == APP_SNAKE ? ICON_SNAKE :
+                 start_items[i].app == APP_KALEIDOSCOPE ? ICON_DOODLE :
                  start_items[i].app == APP_SETTINGS ? ICON_SETTINGS : ICON_ABOUT;
         icon_draw(id, ir.x + 7, ir.y + 7, 22);
         text(ir.x + 40, ir.y + 14, start_items[i].label, 1, rgb(228, 232, 240));
@@ -727,6 +731,7 @@ static void dispatch_mouse_to_apps(Window *w, int ev)
     case APP_IMGVIEW:  app_imgview_mouse(w, lx, ly, ev); break;
         case APP_MUSIC:    app_music_mouse(w, lx, ly, ev); break;
         case APP_SNAKE:    app_snake_mouse(w, lx, ly, ev); break;
+        case APP_KALEIDOSCOPE: app_kaleido_mouse(w, lx, ly, ev); break;
         }
     }
 
@@ -743,6 +748,7 @@ static const struct { int app; const char *label; int cmd; } pal_cmds[] = {
     { APP_SETTINGS,"Settings",        0 },
     { APP_ABOUT,   "About KiKOS",     0 },
     { APP_SNAKE,   "Snake",           0 },
+    { APP_KALEIDOSCOPE, "Kaleidoscope", 0 },
     { 0, "Night light",     1 },
     { 0, "Focus mode",      2 },
     { 0, "Reboot",          4 },
@@ -832,7 +838,8 @@ static void draw_command_palette(void)
                  pal_cmds[i].app == APP_SYSMON ? ICON_SETTINGS :
                  pal_cmds[i].app == APP_IMGVIEW ? ICON_IMAGE :
                  pal_cmds[i].app == APP_MUSIC ? ICON_MUSIC :
-                 pal_cmds[i].app == APP_SNAKE ? ICON_SNAKE : ICON_SETTINGS;
+                 pal_cmds[i].app == APP_SNAKE ? ICON_SNAKE :
+                 pal_cmds[i].app == APP_KALEIDOSCOPE ? ICON_DOODLE : ICON_SETTINGS;
         icon_draw(id, ir.x + 8, ir.y + 6, 22);
         text(ir.x + 40, ir.y + 11, pal_cmds[i].label, 1, rgb(228, 232, 240));
         if (sel) text(ir.x + ir.w - 44, ir.y + 11, "Enter", 1, g_accent);
@@ -1422,6 +1429,7 @@ void gui_frame(void)
         case APP_IMGVIEW:  app_imgview_draw(w, &c); break;
         case APP_MUSIC:    app_music_draw(w, &c); break;
         case APP_SNAKE:    app_snake_draw(w, &c); break;
+        case APP_KALEIDOSCOPE: app_kaleido_draw(w, &c); break;
         }
         if (a < 255)
             blend_rect(w->r.x, w->r.y, w->r.w, w->r.h, rgb(0, 0, 0), (u8)(255 - a));

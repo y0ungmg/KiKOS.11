@@ -50,5 +50,10 @@ void app_snake_draw(Window *w, Rect *c);
 void app_snake_mouse(Window *w, int lx, int ly, int ev);
 void app_snake_key(Window *w, int key);
 
+void app_kaleido_open(Window *w);
+void app_kaleido_draw(Window *w, Rect *c);
+void app_kaleido_mouse(Window *w, int lx, int ly, int ev);
+void app_kaleido_key(Window *w, int key);
+
 const char *cpu_brand(void);
 u32 total_mem_kb(void);

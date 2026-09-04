@@ -59,49 +59,98 @@ void isr_dispatch(u32 n)
     }
 }
 
+static const char *const splash_steps[] = {
+    "detecting CPU",
+    "probing memory",
+    "initializing drivers",
+    "starting display",
+    "loading desktop"
+};
+#define SPLASH_STEPS 5
+
+static void splash_draw_bar(int cx, int cy, int barw, int pct, u32 tick)
+{
+    fill_rect(cx - barw / 2 - 1, cy + 140, barw + 2, 10, rgb(8, 10, 18));
+    fill_rect(cx - barw / 2 - 1, cy + 140, barw + 2, 2, rgb(20, 24, 40));
+    fill_rect(cx - barw / 2 - 1, cy + 148, barw + 2, 2, rgb(20, 24, 40));
+    if (pct > 0) {
+        int pw = pct * barw / 100;
+        for (int j = 0; j < 8; j++)
+            hline(cx - barw / 2, cy + 142 + j, pw,
+                  mixc(g_accent_a, g_accent_b, (u8)(j * 32)));
+        int shim = (int)(tick * 40) % (barw * 2) - barw;
+        for (int j = 0; j < 8; j++)
+            hline(cx - barw / 2 + shim, cy + 142 + j,
+                  shim + 28 > barw ? barw - shim : 28, rgb(255, 255, 255));
+    }
+}
+
 static void splash(void)
 {
     wall_blit();
 
     int cx = SW / 2, cy = SH / 2 - 30;
 
-    for (int j = -30; j <= 114; j++) {
-        int dist = j < 0 ? -j : (j > 84 ? j - 84 : 0);
-        int alpha = dist > 0 ? 40 - dist : 40;
-        if (alpha > 0) {
-            u32 glow_c = mixc(g_accent_a, g_accent_b, (u8)(128));
-            blend_rect(cx - 42 - 20, cy - 42 + j, 84 + 40, 1, glow_c, (u8)alpha);
+    u32 t0 = uptime_ms();
+    int total_ms = 2300;
+    int step_ms = total_ms / SPLASH_STEPS;
+    int step = 0;
+
+    while (uptime_ms() - t0 < (u32)total_ms) {
+        u32 now = uptime_ms() - t0;
+        u32 ticks = g_ticks;
+
+        int pct = (int)(now * 100 / total_ms);
+        int cur_step = (int)(now / step_ms);
+        if (cur_step >= SPLASH_STEPS) cur_step = SPLASH_STEPS - 1;
+        if (cur_step != step) {
+            step = cur_step;
+            beep_click();
         }
-    }
 
-    for (int j = 0; j < 84; j++) {
-        u32 c = mixc(g_accent_a, g_accent_b, (u8)((j * 255) / 84));
-        hline(cx - 42, cy - 42 + j, 84, c);
-    }
+        wall_blit();
 
-    text(cx - 12, cy - 12, "K", 3, rgb(250, 252, 255));
+        /* pulsing glow behind logo */
+        int pulse = 26 + (int)((ticks % 40) * 2);
+        for (int j = -30; j <= 114; j++) {
+            int dist = j < 0 ? -j : (j > 84 ? j - 84 : 0);
+            int alpha = dist > 0 ? 44 - dist : 44;
+            if (alpha > 0) {
+                u32 glow_c = mixc(g_accent_a, g_accent_b, (u8)(128 + (ticks % 60)));
+                blend_rect(cx - 42 - pulse, cy - 42 + j, 84 + pulse * 2, 1, glow_c, (u8)alpha);
+            }
+        }
 
-    const char *nm = "KiKOS.11";
-    text(cx - text_w(nm, 4) / 2, cy + 66, nm, 4, rgb(245, 248, 252));
+        for (int j = 0; j < 84; j++) {
+            u32 c = mixc(g_accent_a, g_accent_b, (u8)((j * 255) / 84));
+            hline(cx - 42, cy - 42 + j, 84, c);
+        }
 
-    const char *sub = "'Aurora'  build 2026.08";
-    text(cx - text_w(sub, 1) / 2, cy + 106, sub, 1, mixc(g_accent_a, rgb(255, 255, 255), 60));
+        text(cx - 12, cy - 12, "K", 3, rgb(250, 252, 255));
 
-    int barw = 260;
-    for (int t = 0; t < 90; t++) {
-        int p = t * barw / 90;
-        fill_rect(cx - barw / 2 - 1, cy + 140, barw + 2, 8, rgb(10, 12, 20));
-        for (int j = 0; j < 6; j++)
-            hline(cx - barw / 2, cy + 141 + j, p > barw ? barw : p,
-                  mixc(g_accent_a, g_accent_b, (u8)(j * 42)));
-        arc(cx + barw / 2 + 26, cy + 144, 7, (int)(g_ticks * 14) % 360,
-            (int)((g_ticks * 14) % 360) + 300, rgb(235, 240, 248));
+        const char *nm = "KiKOS.11";
+        text(cx - text_w(nm, 4) / 2, cy + 66, nm, 4, rgb(245, 248, 252));
 
+        const char *sub = "'Aurora'  build 2026.08";
+        text(cx - text_w(sub, 1) / 2, cy + 106, sub, 1, mixc(g_accent_a, rgb(255, 255, 255), 60));
+
+        splash_draw_bar(cx, cy, 260, pct, ticks);
+
+        /* step label */
+        text(cx - text_w(splash_steps[cur_step], 1) / 2, cy + 158,
+             splash_steps[cur_step], 1, (cur_step == step) ? rgb(235, 240, 248)
+                                                           : mixc(rgb(90, 96, 116), rgb(190, 198, 214), 120));
+
+        /* spinner */
+        arc(cx + 156, cy + 144, 7, (int)(ticks * 14) % 360,
+            (int)((ticks * 14) % 360) + 300, rgb(235, 240, 248));
+
+        int wait = 8;
         u32 end = g_ticks + 1;
-        while ((i32)(g_ticks - end) < 0) __asm__ volatile("hlt");
+        while ((i32)(g_ticks - end) < 0 && wait--) __asm__ volatile("hlt");
     }
 
-    sleep_ticks(25);
+    sleep_ticks(15);
 }
 
 void kmain(BootInfo *bi)
@@ -183,6 +232,7 @@ void kmain(BootInfo *bi)
                         case APP_EDIT: app_edit_key(g_focus, key); break;
                         case APP_SYSMON: app_sysmon_key(g_focus, key); break;
                         case APP_SNAKE: app_snake_key(g_focus, key); break;
+                        case APP_KALEIDOSCOPE: app_kaleido_key(g_focus, key); break;
                         default: break;
                         }
                     }

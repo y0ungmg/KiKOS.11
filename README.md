@@ -1,19 +1,54 @@
 # KiKOS.11
 
-A from-scratch 32-bit hobby operating system with a full graphical desktop, built entirely in C and x86 assembly. No Linux, no GRUB — just raw hardware.
+<div align="center">
+
+**A from-scratch 32-bit graphical operating system — no Linux, no GRUB, just raw hardware.**
+
+![C](https://img.shields.io/badge/language-C%20%2F%20x86%20ASM-35e0da?style=for-the-badge)
+![Arch](https://img.shields.io/badge/arch-i686-35e0da?style=for-the-badge)
+![Mode](https://img.shields.io/badge/mode-freestanding%2032--bit-35e0da?style=for-the-badge)
+![Boot](https://img.shields.io/badge/boot-multistage%20VBE-35e0da?style=for-the-badge)
+![Resolution](https://img.shields.io/badge/display-1024x768%2032bpp-c864fa?style=for-the-badge)
+
+**GPLv3-adjacent hobby/educational project · built by hand in C and NASM**
+
+</div>
+
+KiKOS.11 is a complete desktop operating system written from the ground up: a 512-byte MBR, a real-mode VBE stage-2 bootloader that detects memory and probes the graphics adapter, a protected-mode kernel, a window manager, and a whole suite of apps — all rendered by a software rasterizer into the linear framebuffer.
 
 ![Desktop](shots_desktop2.png)
+
+> *Boot splash → lock screen → desktop. Fully windowed GUI with animated wallpapers, glassmorphism chrome, and a command palette.*
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+  - [Desktop Environment](#desktop-environment)
+  - [Visual Identity](#visual-identity)
+  - [Built-in Apps](#built-in-apps)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Screenshot Gallery](#screenshot-gallery)
+- [Building](#building)
+- [Architecture](#architecture)
+- [Dormant Subsystems](#dormant-subsystems)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+---
 
 ## Features
 
 ### Desktop Environment
+- **Animated boot splash** — labeled hardware-init steps (CPU, memory, drivers, display, desktop), gradient shimmer progress bar, pulsing KiKOS logo
 - **Aurora wallpaper** with animated glow orbs and vignette
 - **Frosted taskbar** with system tray (clock, Wi-Fi, battery, speaker)
-- **Start menu** with live search filtering across 12 built-in apps
+- **Start menu** with live search filtering across 13 built-in apps
 - **Command Palette** (`Ctrl+K` / `F1`) — type any app or command to launch it
 - **Right-click context menu** with quick access to Night light, Focus, Mood, Glance
 - **Desktop icons** with double-click to open
-- **Window management** — drag, resize, minimize, maximize, close
+- **Window management** — drag, resize, minimize, maximize, close (with open/close/minimize animations)
 - **Aero Snap** — drag to left/right edge for half-screen, corners for quarter-screen, top for maximize
 - **Glance panel** (`F5`) — slide-in dashboard with live clock, memory bar, uptime, quick toggles
 - **Quick Settings** — Wi-Fi, Bluetooth, Airplane mode, Night light, volume & brightness sliders
@@ -39,6 +74,7 @@ A from-scratch 32-bit hobby operating system with a full graphical desktop, buil
 | **Doodle** | Paint app with color palette and freehand drawing |
 | **Image Viewer** | Procedural image generation and display |
 | **Music Player** | Playlist, now-playing view, waveform, play/pause/seek controls |
+| **Kaleidoscope** | Colorful generative mandala that slowly rotates and reshapes; click to re-roll the palette |
 | **System Monitor** | 4-tab view: processes, performance graphs, system info, network |
 | **Antivirus** | Animated shield scan with progress bar and threat log |
 | **Settings** | 6 categories: Personalization, System, Input, Display, Privacy, About |
@@ -109,7 +145,7 @@ kernel/
     vfs.c/h         Virtual filesystem (in-memory tree)
     fs.c/h          Filesystem abstraction
     apps.h          App IDs and draw/mouse prototypes
-    app_*.c         12 built-in applications
+    app_*.c         13 built-in applications
     process.c/h     Process scheduler (dormant)
     ahci.c/h        AHCI/SATA driver (dormant)
     pci.c/h         PCI bus enumeration (dormant)
@@ -136,11 +172,24 @@ These are implemented but not yet wired into the boot sequence:
 - **PCI** — full bus scan, BAR access, MSI enable
 - **Network** — ARP, IP, ICMP echo reply, TCP connect, BSD socket API
 
-## Screenshots
+## Screenshot Gallery
 
-![Boot](shots_boot4.png)
-![Start Menu](shots_startmenu.png)
-![Desktop](shots_desktop.png)
+| | |
+|---|---|
+| ![Boot](shots_boot4.png) | ![Start Menu](shots_startmenu.png) |
+| ![Desktop](shots_desktop2.png) | ![Kaleidoscope](shots_kaleido.png) |
+
+More: `shots_boot.png`, `shots_boot2.png`, `shots_boot3.png`, `shots_desktop.png`, `shots_menu2.png`, `shots_mousepos.png`.
+
+## Roadmap
+
+Prioritized next steps for KiKOS.11, keeping the KiKOS-native identity rather than cloning any existing OS:
+
+- **Wake the dormant subsystems** — wire the process scheduler, paging, AHCI, and network stack into the boot sequence so the OS does real multitasking, virtual memory, disk I/O, and networking.
+- **Live desktop** — subtle animation on the idle wallpaper (aurora breathe), animated peek previews for taskbar apps.
+- **More generative apps** — extend the graphics engine with particle systems, plasma, and fractal viewers.
+- **Real file persistence** — save/load VFS contents to an AHCI disk so the text editor and files app survive reboots.
+- **Bootloader** — raise the kernel size ceiling and show a byte-counted load percentage during stage-2 copy.
 
 ## License
 
