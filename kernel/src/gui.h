@@ -20,6 +20,7 @@ enum {
     APP_SNAKE,
     APP_KALEIDOSCOPE,
     APP_GOL,
+    APP_SLIDE,
     APP_COUNT
 };
 

@@ -234,6 +234,7 @@ void kmain(BootInfo *bi)
                         case APP_SNAKE: app_snake_key(g_focus, key); break;
                         case APP_KALEIDOSCOPE: app_kaleido_key(g_focus, key); break;
                         case APP_GOL: app_gol_key(g_focus, key); break;
+                        case APP_SLIDE: app_slide_key(g_focus, key); break;
                         default: break;
                         }
                     }

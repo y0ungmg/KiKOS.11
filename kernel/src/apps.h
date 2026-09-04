@@ -56,6 +56,12 @@ void app_kaleido_mouse(Window *w, int lx, int ly, int ev);
 void app_kaleido_key(Window *w, int key);
 
 void app_gol_open(Window *w);
+void app_slide_open(Window *w);
+void app_slide_draw(Window *w, Rect *c);
+void app_slide_mouse(Window *w, int lx, int ly, int ev);
+void app_slide_key(Window *w, int key);
+void app_slide_close(Window *w);
+
 void app_gol_draw(Window *w, Rect *c);
 void app_gol_mouse(Window *w, int lx, int ly, int ev);
 void app_gol_key(Window *w, int key);

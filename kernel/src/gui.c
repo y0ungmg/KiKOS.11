@@ -63,11 +63,12 @@ static const struct { int icon; const char *label; } desk_icons[] = {
     { ICON_ABOUT, "About" },
     { ICON_SNAKE, "Snake" },
     { ICON_DOODLE, "Game of Life" },
+    { ICON_CALC, "Slide Puzzle" },
 };
-#define N_DESK_ICONS 11
+#define N_DESK_ICONS 12
 
-static const int pins[] = { APP_TERM, APP_FILES, APP_CALC, APP_DOODLE, APP_AV, APP_EDIT, APP_SYSMON, APP_IMGVIEW, APP_MUSIC, APP_SETTINGS, APP_SNAKE, APP_KALEIDOSCOPE, APP_GOL };
-#define N_PINS 13
+static const int pins[] = { APP_TERM, APP_FILES, APP_CALC, APP_DOODLE, APP_AV, APP_EDIT, APP_SYSMON, APP_IMGVIEW, APP_MUSIC, APP_SETTINGS, APP_SNAKE, APP_KALEIDOSCOPE, APP_GOL, APP_SLIDE };
+#define N_PINS 14
 
 /* ----- night light, aero-snap, quick settings, start search ----- */
 int g_nightlight = 0;
@@ -97,8 +98,9 @@ static const struct { int app; const char *label; } start_items[] = {
     { APP_SNAKE, "Snake" },
     { APP_KALEIDOSCOPE, "Kaleidoscope" },
     { APP_GOL, "Game of Life" },
+    { APP_SLIDE, "Slide Puzzle" },
 };
-#define N_START_ITEMS 14
+#define N_START_ITEMS 15
 
 static char start_search[32];
 static int start_search_len = 0;
@@ -250,6 +252,7 @@ Window *win_open(int app)
         case APP_SNAKE:    w = win_alloc(app, "Snake", 480, 400); app_snake_open(w); break;
         case APP_KALEIDOSCOPE: w = win_alloc(app, "Kaleidoscope", 480, 400); app_kaleido_open(w); break;
         case APP_GOL:    w = win_alloc(app, "Game of Life", 520, 400); app_gol_open(w); break;
+        case APP_SLIDE: w = win_alloc(app, "Slide Puzzle", 440, 440); app_slide_open(w); break;
         }
         if (!w) return 0;
     }
@@ -737,6 +740,7 @@ static void dispatch_mouse_to_apps(Window *w, int ev)
         case APP_SNAKE:    app_snake_mouse(w, lx, ly, ev); break;
         case APP_KALEIDOSCOPE: app_kaleido_mouse(w, lx, ly, ev); break;
         case APP_GOL:    app_gol_mouse(w, lx, ly, ev); break;
+        case APP_SLIDE: app_slide_mouse(w, lx, ly, ev); break;
         }
     }
 
@@ -755,6 +759,7 @@ static const struct { int app; const char *label; int cmd; } pal_cmds[] = {
     { APP_SNAKE,   "Snake",           0 },
     { APP_KALEIDOSCOPE, "Kaleidoscope", 0 },
     { APP_GOL,     "Game of Life",    0 },
+    { APP_SLIDE,   "Slide Puzzle",    0 },
     { 0, "Night light",     1 },
     { 0, "Focus mode",      2 },
     { 0, "Reboot",          4 },
@@ -1243,7 +1248,8 @@ static void handle_input(void)
                               i == 2 ? APP_DOODLE : i == 3 ? APP_AV :
                               i == 4 ? APP_EDIT : i == 5 ? APP_SYSMON :
                               i == 6 ? APP_IMGVIEW : i == 7 ? APP_MUSIC :
-                              i == 8 ? APP_ABOUT : APP_SNAKE;
+                              i == 8 ? APP_ABOUT : i == 9 ? APP_SNAKE :
+                              i == 10 ? APP_GOL : APP_SLIDE;
                     win_open(app);
                     last_click_icon = -1;
                 } else {
@@ -1304,8 +1310,14 @@ static void screensaver_draw(void)
         int b = 255 - (stars[i].z * 255) / SW;
         if (b < 0) b = 0;
         if (b > 255) b = 255;
-        putpx(sx, sy, mixc(rgb(170, 195, 255), rgb(255, 255, 255), (u8)b));
+        u32 color = mixc(g_accent, rgb(255, 255, 255), (u8)(b * 255 / 255));
+        putpx(sx, sy, mixc(color, rgb(255, 255, 255), (u8)(b / 2)));
     }
+
+    // Subtle aurora glow orbs during screensaver
+    int t = (int)(g_ticks);
+    blend_rect(SW * 2 / 3 + (int)((t / 3) % 160) - 80, SH / 3, 160, 160, g_accent_a, 18);
+    blend_rect(SW / 5 + (int)((t * 2 / 5) % 220) - 110, SH * 3 / 4, 160, 160, g_accent_b, 18);
 
     const char *msg = "KiKOS.11  -  move the mouse or press a key to wake";
     text(SW / 2 - text_w(msg, 2) / 2, SH / 2 - 8, msg, 2, rgb(220, 230, 255));
@@ -1489,6 +1501,7 @@ void gui_frame(void)
         case APP_SNAKE:    app_snake_draw(w, &c); break;
         case APP_KALEIDOSCOPE: app_kaleido_draw(w, &c); break;
         case APP_GOL:    app_gol_draw(w, &c); break;
+        case APP_SLIDE: app_slide_draw(w, &c); break;
         }
         if (a < 255)
             blend_rect(w->r.x, w->r.y, w->r.w, w->r.h, rgb(0, 0, 0), (u8)(255 - a));
