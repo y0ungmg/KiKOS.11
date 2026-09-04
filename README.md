@@ -44,7 +44,7 @@ KiKOS.11 is a complete desktop operating system written from the ground up: a 51
 - **Animated boot splash** — labeled hardware-init steps (CPU, memory, drivers, display, desktop), gradient shimmer progress bar, pulsing KiKOS logo
 - **Aurora wallpaper** with animated glow orbs and vignette
 - **Frosted taskbar** with system tray (clock, Wi-Fi, battery, speaker)
-- **Start menu** with live search filtering across 13 built-in apps
+- **Start menu** with live search filtering across 14 built-in apps
 - **Command Palette** (`Ctrl+K` / `F1`) — type any app or command to launch it
 - **Right-click context menu** with quick access to Night light, Focus, Mood, Glance
 - **Desktop icons** with double-click to open
@@ -67,7 +67,7 @@ KiKOS.11 is a complete desktop operating system written from the ground up: a 51
 
 | App | Description |
 |-----|-------------|
-| **Terminal** | VFS-backed shell with `ls`, `cat`, `mkdir`, `rm`, `cp`, `mv`, `find`, `grep`, `echo`, `df`, `mem`, `uptime`, `theme`, and more |
+| **Terminal** | VFS-backed shell with colored output, `ls`, `cat`, `mkdir`, `rm`, `cp`, `mv`, `find`, `grep`, `echo`, `df`, `mem`, `uptime`, `theme`, `uname`, `hostname`, `whoami`, and more |
 | **Files** | 3-pane file browser with navigation, list, and preview panes |
 | **Calculator** | Full arithmetic calculator with a button grid |
 | **Text Editor** | Line numbers, syntax highlighting, cursor, scrollbar |
@@ -80,6 +80,7 @@ KiKOS.11 is a complete desktop operating system written from the ground up: a 51
 | **Settings** | 6 categories: Personalization, System, Input, Display, Privacy, About |
 | **About** | System information and credits |
 | **Snake** | Classic snake game with score tracking |
+| **Game of Life** | Conway's cellular automaton — click cells to toggle; space to pause, R to randomize, G for a glider |
 
 ### Keyboard Shortcuts
 
@@ -145,7 +146,7 @@ kernel/
     vfs.c/h         Virtual filesystem (in-memory tree)
     fs.c/h          Filesystem abstraction
     apps.h          App IDs and draw/mouse prototypes
-    app_*.c         13 built-in applications
+    app_*.c         14 built-in applications
     process.c/h     Process scheduler (dormant)
     ahci.c/h        AHCI/SATA driver (dormant)
     pci.c/h         PCI bus enumeration (dormant)
@@ -178,6 +179,7 @@ These are implemented but not yet wired into the boot sequence:
 |---|---|
 | ![Boot](shots_boot4.png) | ![Start Menu](shots_startmenu.png) |
 | ![Desktop](shots_desktop2.png) | ![Kaleidoscope](shots_kaleido.png) |
+| ![Terminal](shots_term_colored.png) | ![Game of Life](shots_gol.png) |
 
 More: `shots_boot.png`, `shots_boot2.png`, `shots_boot3.png`, `shots_desktop.png`, `shots_menu2.png`, `shots_mousepos.png`.
 

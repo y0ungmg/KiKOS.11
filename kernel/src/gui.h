@@ -19,6 +19,7 @@ enum {
     APP_MUSIC,
     APP_SNAKE,
     APP_KALEIDOSCOPE,
+    APP_GOL,
     APP_COUNT
 };
 

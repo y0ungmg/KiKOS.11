@@ -16,6 +16,8 @@
 #define TERM_MAXL  200
 
 static char lines[TERM_MAXL][TERM_COLS + 1];
+static u32  line_col[TERM_MAXL];
+static u32  cur_col = 0xC8CEDA;
 static int  count = 0;
 static char input[128];
 static int  input_len = 0;
@@ -23,6 +25,7 @@ static int  input_len = 0;
 static void scroll_up(void)
 {
     memmove(lines[0], lines[1], (u32)(TERM_MAXL - 1) * (TERM_COLS + 1));
+    memmove(line_col, line_col + 1, (u32)(TERM_MAXL - 1) * sizeof(u32));
 }
 
 static void new_line(void)
@@ -32,6 +35,7 @@ static void new_line(void)
         count--;
     }
     memset(lines[count], 0, TERM_COLS + 1);
+    line_col[count] = cur_col;
     count++;
 }
 
@@ -57,8 +61,11 @@ static void term_push(const char *s)
         }
         lines[r][col] = *s;
         lines[r][col + 1] = 0;
+        line_col[r] = cur_col;
     }
 }
+
+static void term_color(u32 c) { cur_col = c; }
 
 void app_term_open(Window *w)
 {
@@ -66,6 +73,7 @@ void app_term_open(Window *w)
     count = 0;
     input_len = 0;
     input[0] = 0;
+    cur_col = rgb(200, 206, 218);
     memset(lines, 0, sizeof(lines));
     term_push("KiKOS shell v1.0 - type 'help'\n");
     term_push("kikos> ");
@@ -82,8 +90,10 @@ static const char *LOGO[] = {
 
 static void cmd_help(void)
 {
+    term_color(mixc(g_accent, rgb(255, 255, 255), 40));
+    term_push("commands:\n");
+    term_color(rgb(200, 206, 218));
     term_push(
-        "commands:\n"
         "  help          this list\n"
         "  kikofetch     system summary\n"
         "  about         what is KiKOS\n"
@@ -119,6 +129,9 @@ static void cmd_help(void)
         "  mem           memory report\n"
         "  cpu           cpu identification\n"
         "  theme NAME    aurora sunset ocean mono\n"
+        "  uname         system info\n"
+        "  hostname      computer name\n"
+        "  whoami        current user\n"
         "  clear         wipe screen\n"
         "  reboot        restart machine\n"
         "  poweroff      switch off\n");
@@ -128,14 +141,18 @@ static void cmd_kikofetch(void)
 {
     char b[96];
     for (int i = 0; i < 4; i++) {
+        term_color(mixc(g_accent, rgb(255, 255, 220), 30));
         term_push(LOGO[i]);
+        term_color(rgb(200, 206, 218));
         term_push("   ");
         switch (i) {
         case 0: term_push("kikos@kikos-pc"); break;
         case 1: term_push("-----------------"); break;
         case 2:
             strcpy(b, "OS: KiKOS.11 'Aurora'");
+            term_color(mixc(g_accent, rgb(255,255,255), 40));
             term_push(b);
+            term_color(rgb(200, 206, 218));
             break;
         case 3:
             strcpy(b, "WM: KiWM   Shell: ksh");
@@ -469,10 +486,13 @@ static void cmd_ls(const char *arg)
     VfsNode *d = vfs_resolve_path(arg && *arg ? arg : "/");
     if (!d || d->type != VFS_DIR) { term_push("ls: no such directory\n"); return; }
     for (int i = 0; i < d->child_count; i++) {
+        if (d->children[i]->type == VFS_DIR) term_color(mixc(g_accent, rgb(255,255,255), 40));
+        else term_color(rgb(200, 206, 218));
         term_push(d->children[i]->name);
         if (d->children[i]->type == VFS_DIR) term_push("/");
         term_push("   ");
     }
+    term_color(rgb(200, 206, 218));
     term_push("\n");
 }
 
@@ -548,8 +568,27 @@ static void cmd_theme(const char *arg)
     else if (!strcmp(arg, "sunset")) theme_set(WP_SUNSET);
     else if (!strcmp(arg, "ocean")) theme_set(WP_OCEAN);
     else if (!strcmp(arg, "mono")) theme_set(WP_MONO);
-    else { term_push("themes: aurora sunset ocean mono\n"); return; }
-    term_push("theme applied\n");
+    else { term_color(rgb(235,90,100)); term_push("themes: aurora sunset ocean mono\n"); term_color(rgb(200,206,218)); return; }
+    term_color(mixc(g_accent,rgb(255,255,255),40)); term_push("theme applied\n"); term_color(rgb(200,206,218));
+}
+
+static void cmd_uname(void)
+{
+    char b[80], n[16];
+    strcpy(b, "KiKOS.11 kikos-1.0-i686 ");
+    utoa_dec((u32)SW, n); strcat(b, n); strcat(b, "x");
+    utoa_dec((u32)SH, n); strcat(b, n);
+    term_push(b); term_push("\n");
+}
+
+static void cmd_hostname(void)
+{
+    term_push("kikos-pc\n");
+}
+
+static void cmd_whoami(void)
+{
+    term_push("kikos\n");
 }
 
 static void exec_one(char *line)
@@ -594,6 +633,9 @@ static void exec_one(char *line)
     else if (!strcmp(line, "mem")) cmd_mem();
     else if (!strcmp(line, "cpu")) cmd_cpu();
     else if (!strcmp(line, "theme")) cmd_theme(rest);
+    else if (!strcmp(line, "uname")) cmd_uname();
+    else if (!strcmp(line, "hostname")) cmd_hostname();
+    else if (!strcmp(line, "whoami")) cmd_whoami();
     else if (!strcmp(line, "clear") || !strcmp(line, "cls")) {
         count = 0;
         memset(lines, 0, sizeof(lines));
@@ -601,9 +643,12 @@ static void exec_one(char *line)
     else if (!strcmp(line, "poweroff") || !strcmp(line, "shutdown") ||
              !strcmp(line, "off")) power_off();
     else {
+        term_color(rgb(235, 90, 100));
         term_push("unknown command: ");
         term_push(line);
-        term_push("  ('help' lists commands)\n");
+        term_push("\n");
+        term_color(rgb(160, 166, 182));
+        term_push("type 'help' for commands\n");
     }
 }
 
@@ -667,7 +712,7 @@ void app_term_draw(Window *w, Rect *c)
         const char *txt = lines[rowidx];
         text(c->x + 10, y, txt, 1,
              !strncmp(txt, "kikos>", 6) ? mixc(g_accent, rgb(255, 255, 255), 40)
-                                        : rgb(200, 206, 218));
+                                        : line_col[rowidx]);
         y += lh;
     }
 

@@ -62,11 +62,12 @@ static const struct { int icon; const char *label; } desk_icons[] = {
     { ICON_MUSIC, "Music Player" },
     { ICON_ABOUT, "About" },
     { ICON_SNAKE, "Snake" },
+    { ICON_DOODLE, "Game of Life" },
 };
-#define N_DESK_ICONS 10
+#define N_DESK_ICONS 11
 
-static const int pins[] = { APP_TERM, APP_FILES, APP_CALC, APP_DOODLE, APP_AV, APP_EDIT, APP_SYSMON, APP_IMGVIEW, APP_MUSIC, APP_SETTINGS, APP_SNAKE };
-#define N_PINS 11
+static const int pins[] = { APP_TERM, APP_FILES, APP_CALC, APP_DOODLE, APP_AV, APP_EDIT, APP_SYSMON, APP_IMGVIEW, APP_MUSIC, APP_SETTINGS, APP_SNAKE, APP_KALEIDOSCOPE, APP_GOL };
+#define N_PINS 13
 
 /* ----- night light, aero-snap, quick settings, start search ----- */
 int g_nightlight = 0;
@@ -95,8 +96,9 @@ static const struct { int app; const char *label; } start_items[] = {
     { APP_ABOUT, "About KiKOS" },
     { APP_SNAKE, "Snake" },
     { APP_KALEIDOSCOPE, "Kaleidoscope" },
+    { APP_GOL, "Game of Life" },
 };
-#define N_START_ITEMS 13
+#define N_START_ITEMS 14
 
 static char start_search[32];
 static int start_search_len = 0;
@@ -247,6 +249,7 @@ Window *win_open(int app)
         case APP_MUSIC:    w = win_alloc(app, "Music Player", 600, 500); break;
         case APP_SNAKE:    w = win_alloc(app, "Snake", 480, 400); app_snake_open(w); break;
         case APP_KALEIDOSCOPE: w = win_alloc(app, "Kaleidoscope", 480, 400); app_kaleido_open(w); break;
+        case APP_GOL:    w = win_alloc(app, "Game of Life", 520, 400); app_gol_open(w); break;
         }
         if (!w) return 0;
     }
@@ -344,7 +347,7 @@ static void draw_window_chrome(Window *w)
               w->app == APP_SETTINGS ? ICON_SETTINGS : w->app == APP_AV ? ICON_SHIELD :
                w->app == APP_EDIT ? ICON_TXT : w->app == APP_SYSMON ? ICON_SETTINGS :
                w->app == APP_IMGVIEW ? ICON_IMAGE : w->app == APP_MUSIC ? ICON_MUSIC :
-               w->app == APP_SNAKE ? ICON_SNAKE : w->app == APP_KALEIDOSCOPE ? ICON_DOODLE : ICON_ABOUT,
+               w->app == APP_SNAKE ? ICON_SNAKE : w->app == APP_KALEIDOSCOPE ? ICON_DOODLE : w->app == APP_GOL ? ICON_DOODLE : ICON_ABOUT,
               r.x + r.w / 2 - 9, r.y + 6, 18);
 
     int bw = 26;
@@ -451,7 +454,7 @@ static void draw_taskbar(void)
                  app == APP_AV ? ICON_SHIELD : app == APP_EDIT ? ICON_TXT :
                  app == APP_SYSMON ? ICON_SETTINGS : app == APP_IMGVIEW ? ICON_IMAGE :
                  app == APP_MUSIC ? ICON_MUSIC : app == APP_SNAKE ? ICON_SNAKE :
-                 app == APP_KALEIDOSCOPE ? ICON_DOODLE : ICON_SETTINGS;
+                 app == APP_KALEIDOSCOPE ? ICON_DOODLE : app == APP_GOL ? ICON_DOODLE : ICON_SETTINGS;
         icon_draw(id, tr.x + 5, tr.y + 5, 26);
         gx += 46;
     }
@@ -534,9 +537,10 @@ static void draw_start_menu(void)
                  start_items[i].app == APP_SYSMON ? ICON_SETTINGS :
                  start_items[i].app == APP_IMGVIEW ? ICON_IMAGE :
                  start_items[i].app == APP_MUSIC ? ICON_MUSIC :
-                 start_items[i].app == APP_SNAKE ? ICON_SNAKE :
-                 start_items[i].app == APP_KALEIDOSCOPE ? ICON_DOODLE :
-                 start_items[i].app == APP_SETTINGS ? ICON_SETTINGS : ICON_ABOUT;
+start_items[i].app == APP_SNAKE ? ICON_SNAKE :
+                  start_items[i].app == APP_KALEIDOSCOPE ? ICON_DOODLE :
+                  start_items[i].app == APP_GOL ? ICON_DOODLE :
+                  start_items[i].app == APP_SETTINGS ? ICON_SETTINGS : ICON_ABOUT;
         icon_draw(id, ir.x + 7, ir.y + 7, 22);
         text(ir.x + 40, ir.y + 14, start_items[i].label, 1, rgb(228, 232, 240));
 
@@ -732,6 +736,7 @@ static void dispatch_mouse_to_apps(Window *w, int ev)
         case APP_MUSIC:    app_music_mouse(w, lx, ly, ev); break;
         case APP_SNAKE:    app_snake_mouse(w, lx, ly, ev); break;
         case APP_KALEIDOSCOPE: app_kaleido_mouse(w, lx, ly, ev); break;
+        case APP_GOL:    app_gol_mouse(w, lx, ly, ev); break;
         }
     }
 
@@ -749,6 +754,7 @@ static const struct { int app; const char *label; int cmd; } pal_cmds[] = {
     { APP_ABOUT,   "About KiKOS",     0 },
     { APP_SNAKE,   "Snake",           0 },
     { APP_KALEIDOSCOPE, "Kaleidoscope", 0 },
+    { APP_GOL,     "Game of Life",    0 },
     { 0, "Night light",     1 },
     { 0, "Focus mode",      2 },
     { 0, "Reboot",          4 },
@@ -838,8 +844,9 @@ static void draw_command_palette(void)
                  pal_cmds[i].app == APP_SYSMON ? ICON_SETTINGS :
                  pal_cmds[i].app == APP_IMGVIEW ? ICON_IMAGE :
                  pal_cmds[i].app == APP_MUSIC ? ICON_MUSIC :
-                 pal_cmds[i].app == APP_SNAKE ? ICON_SNAKE :
-                 pal_cmds[i].app == APP_KALEIDOSCOPE ? ICON_DOODLE : ICON_SETTINGS;
+pal_cmds[i].app == APP_SNAKE ? ICON_SNAKE :
+                  pal_cmds[i].app == APP_KALEIDOSCOPE ? ICON_DOODLE :
+                  pal_cmds[i].app == APP_GOL ? ICON_DOODLE : ICON_SETTINGS;
         icon_draw(id, ir.x + 8, ir.y + 6, 22);
         text(ir.x + 40, ir.y + 11, pal_cmds[i].label, 1, rgb(228, 232, 240));
         if (sel) text(ir.x + ir.w - 44, ir.y + 11, "Enter", 1, g_accent);
@@ -1304,6 +1311,56 @@ static void screensaver_draw(void)
     text(SW / 2 - text_w(msg, 2) / 2, SH / 2 - 8, msg, 2, rgb(220, 230, 255));
 }
 
+static void draw_desktop_clock(void)
+{
+    int wx = SW - 172, wy = 20, ww = 152, wh = 150;
+
+    round_rect_blend(wx + 3, wy + 5, ww, wh, 14, rgb(0, 0, 0), 72);
+    round_rect(wx, wy, ww, wh, 14, rgb(17, 19, 27));
+    for (int j = 0; j < wh; j++) {
+        int li = 0;
+        gfx_row_inset(j, wh, 14, &li);
+        putpx(wx + li, wy + j, mixc(g_accent, rgb(0, 0, 0), 110));
+        putpx(wx + ww - 1 - li, wy + j, mixc(g_accent, rgb(0, 0, 0), 140));
+    }
+
+    int cx = wx + ww / 2, cy = wy + 52, R = 34;
+    circle_fill(cx, cy, R + 2, rgb(22, 24, 33));
+    circle_fill(cx, cy, R, rgb(9, 10, 16));
+    for (int t = 0; t < 60; t++) {
+        int x0, y0, x1, y1;
+        arc_point(cx, cy, R - 1, t * 6, &x0, &y0);
+        arc_point(cx, cy, (t % 5 == 0) ? R - 5 : R - 3, t * 6, &x1, &y1);
+        draw_line(x0, y0, x1, y1, (t % 5 == 0) ? rgb(230, 234, 244) : rgb(90, 96, 112));
+    }
+
+    int sec = g_rtc.sec, min = g_rtc.min, hour = g_rtc.hour % 12;
+    int secd = (sec * 6) % 360;
+    int mind = (min * 6 + sec / 10) % 360;
+    int hourd = (hour * 30 + min / 2) % 360;
+
+    int hx, hy;
+    arc_point(cx, cy, R - 12, hourd, &hx, &hy);
+    draw_line(cx, cy, hx, hy, rgb(245, 248, 255));
+    arc_point(cx, cy, R - 4, mind, &hx, &hy);
+    draw_line(cx, cy, hx, hy, rgb(210, 216, 230));
+
+    arc_point(cx, cy, R - 2, secd, &hx, &hy);
+    draw_line(cx, cy, hx, hy, g_accent);
+    circle_fill(cx, cy, 2, g_accent);
+
+    char tbuf[12], dbuf[16];
+    format_time(tbuf, sizeof tbuf);
+    format_date(dbuf, sizeof dbuf);
+    text(wx + ww / 2 - text_w(tbuf, 1) / 2, wy + 96, tbuf, 1, rgb(235, 238, 246));
+    text(wx + ww / 2 - text_w(dbuf, 1) / 2, wy + 110, dbuf, 1, rgb(140, 146, 160));
+
+    u32 used = heap_used() / 1024, total = heap_total() / 1024;
+    u32 pct = used * 100 / total;
+    round_rect(wx + 12, wy + 128, ww - 24, 7, 3, rgb(30, 33, 46));
+    if (pct > 0) round_rect(wx + 12, wy + 128, (ww - 24) * pct / 100, 7, 3, mixc(g_accent, rgb(255, 255, 255), 60));
+}
+
 void gui_frame(void)
 {
     rtc_poll();
@@ -1316,8 +1373,7 @@ void gui_frame(void)
             theme_set(period ? WP_OCEAN : WP_AURORA);
             g_nightlight = period;
         }
-    }
-    if (g_mood) {
+    }    if (g_mood) {
         static u32 mood_hue = 0;
         mood_hue = (mood_hue + 1) % 360;
         g_accent = hsv2rgb(mood_hue, 170, 255);
@@ -1370,6 +1426,8 @@ void gui_frame(void)
     trail_x[0] = ms_x; trail_y[0] = ms_y;
 
     draw_desktop_icons();
+
+    if (!ss_on) draw_desktop_clock();
 
     for (int i = 0; i < g_nwins; i++) {
         Window *w = &g_wins[i];
@@ -1430,6 +1488,7 @@ void gui_frame(void)
         case APP_MUSIC:    app_music_draw(w, &c); break;
         case APP_SNAKE:    app_snake_draw(w, &c); break;
         case APP_KALEIDOSCOPE: app_kaleido_draw(w, &c); break;
+        case APP_GOL:    app_gol_draw(w, &c); break;
         }
         if (a < 255)
             blend_rect(w->r.x, w->r.y, w->r.w, w->r.h, rgb(0, 0, 0), (u8)(255 - a));
