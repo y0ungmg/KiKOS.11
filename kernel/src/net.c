@@ -45,7 +45,7 @@ void net_init(void) {
 }
 
 void net_rx(uint8_t *packet, int len) {
-    if (len < sizeof(eth_header_t)) return;
+    if ((unsigned int)len < sizeof(eth_header_t)) return;
     eth_header_t *eth = (eth_header_t *)packet;
 
     if (memcmp(eth->dst, my_mac, 6) != 0 &&

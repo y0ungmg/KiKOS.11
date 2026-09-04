@@ -16,6 +16,7 @@ char *strncat(char *d, const char *s, u32 n);
 
 char *strchr(const char *s, int c);
 char *strrchr(const char *s, int c);
+char *strstr(const char *hay, const char *needle);
 
 int sscanf(const char *str, const char *fmt, ...);
 

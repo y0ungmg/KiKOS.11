@@ -66,7 +66,7 @@ void paging_map_page(vaddr_t virt, paddr_t phys, uint32_t flags) {
     uint32_t pt_index = (virt >> 12) & 0x3FF;
 
     uint32_t *pd = (uint32_t *)0x9C000;
-    uint32_t *pt = (uint32_t *)(pd[pd_index] & 0xFFFFF000);
+    (void)pd[pd_index];
 
     if (!(pd[pd_index] & 1)) {
         uint32_t frame = first_free_frame();

@@ -476,6 +476,62 @@ static void cmd_ls(const char *arg)
     term_push("\n");
 }
 
+static void grep_helper(VfsNode *dir, const char *pat, const char *pathbuf, int depth)
+{
+    if (depth > 8) return;
+    for (int i = 0; i < dir->child_count; i++) {
+        VfsNode *n = dir->children[i];
+        char p[VFS_MAX_PATH];
+        strcpy(p, pathbuf);
+        strcat(p, n->name);
+        if (n->type == VFS_DIR) {
+            strcat(p, "/");
+            grep_helper(n, pat, p, depth + 1);
+        } else if (n->type == VFS_FILE && n->content) {
+            const char *line = n->content;
+            while (line && *line) {
+                const char *nl = line;
+                while (*nl && *nl != '\n') nl++;
+                int llen = (int)(nl - line);
+                if (llen > 0 && strstr(line, pat)) {
+                    term_push(p);
+                    term_push(":");
+                    char lbuf[132];
+                    if (llen > 120) llen = 120;
+                    int k;
+                    for (k = 0; k < llen; k++) lbuf[k] = line[k];
+                    lbuf[llen] = 0;
+                    term_push(lbuf);
+                    term_push("\n");
+                }
+                if (!*nl) break;
+                line = nl + 1;
+            }
+        }
+    }
+}
+
+static void cmd_grep(const char *arg)
+{
+    if (!arg || !*arg) { term_push("usage: grep PATTERN [PATH]\n"); return; }
+    const char *sp = arg;
+    while (*sp && *sp != ' ') sp++;
+    char pat[64];
+    int plen = (int)(sp - arg);
+    if (plen > 63) plen = 63;
+    int k;
+    for (k = 0; k < plen; k++) pat[k] = arg[k];
+    pat[plen] = 0;
+    const char *path = "/home/kikos";
+    if (*sp) { sp++; while (*sp == ' ') sp++; if (*sp) path = sp; }
+    VfsNode *d = vfs_resolve_path(path);
+    if (!d || d->type != VFS_DIR) { term_push("grep: no such directory\n"); return; }
+    char rootp[VFS_MAX_PATH];
+    strcpy(rootp, path);
+    if (rootp[0] && rootp[strlen(rootp) - 1] != '/') strcat(rootp, "/");
+    grep_helper(d, pat, rootp, 0);
+}
+
 static void cmd_cat(const char *arg)
 {
     if (!arg || !*arg) { term_push("usage: cat FILE\n"); return; }
@@ -519,6 +575,7 @@ static void exec_one(char *line)
     else if (!strcmp(line, "cp")) cmd_cp(rest);
     else if (!strcmp(line, "mv")) cmd_mv(rest);
     else if (!strcmp(line, "find")) cmd_find(rest);
+    else if (!strcmp(line, "grep")) cmd_grep(rest);
     else if (!strcmp(line, "ps")) cmd_ps();
     else if (!strcmp(line, "kill")) cmd_kill(rest);
     else if (!strcmp(line, "df")) cmd_df();

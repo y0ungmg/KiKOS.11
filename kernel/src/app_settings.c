@@ -43,8 +43,8 @@ static const char *settings_categories[] = {
 
 static int g_settings_cat = 0;
 static int g_settings_accent = 0;
-static int g_settings_hover_accent = -1;
-static int g_settings_hover_wall = -1;
+static int g_settings_hover_accent __attribute__((unused)) = -1;
+static int g_settings_hover_wall __attribute__((unused)) = -1;
 static int g_settings_hover_btn = -1;
 
 static void set_accent(int i)
@@ -109,7 +109,7 @@ void app_settings_mouse(Window *w, int lx, int ly, int ev)
     }
 }
 
-static void set_cat_hover(int x, int y, int nav_w) {
+__attribute__((unused)) static void set_cat_hover(int x, int y, int nav_w) {
     g_settings_hover_btn = -1;
     if (x < nav_w) {
         g_settings_hover_btn = y / 44;
@@ -137,6 +137,7 @@ static void draw_category_nav(Rect *c) {
 }
 
 static void draw_personalization(Rect *c, int content_x, int content_y, int content_w) {
+    (void)c; (void)content_w;
     text(content_x, content_y, "Accent Colors", 1, rgb(235, 238, 246));
     for (int i = 0; i < NACC; i++) {
         Rect sr = { content_x + i * 38, content_y + 24, 32, 32 };
@@ -176,6 +177,7 @@ static void draw_personalization(Rect *c, int content_x, int content_y, int cont
 }
 
 static void draw_system(Rect *c, int content_x, int content_y, int content_w) {
+    (void)c;
     text(content_x, content_y, "Date & Time", 1, rgb(235, 238, 246));
 
     Rect ck = { content_x, content_y + 24, 180, 36 };
@@ -220,6 +222,7 @@ static void draw_system(Rect *c, int content_x, int content_y, int content_w) {
 }
 
 static void draw_input(Rect *c, int content_x, int content_y, int content_w) {
+    (void)c; (void)content_w;
     text(content_x, content_y, "Keyboard", 1, rgb(235, 238, 246));
     int y = content_y + 24;
 
@@ -242,6 +245,7 @@ static void draw_input(Rect *c, int content_x, int content_y, int content_w) {
 }
 
 static void draw_display(Rect *c, int content_x, int content_y, int content_w) {
+    (void)c; (void)content_w;
     text(content_x, content_y, "Display", 1, rgb(235, 238, 246));
     int y = content_y + 24;
 
@@ -293,6 +297,7 @@ static void draw_display(Rect *c, int content_x, int content_y, int content_w) {
 }
 
 static void draw_privacy(Rect *c, int content_x, int content_y, int content_w) {
+    (void)c; (void)content_w;
     text(content_x, content_y, "Privacy & Security", 1, rgb(235, 238, 246));
     int y = content_y + 24;
 
@@ -321,6 +326,7 @@ static void draw_privacy(Rect *c, int content_x, int content_y, int content_w) {
 }
 
 static void draw_about(Rect *c, int content_x, int content_y, int content_w) {
+    (void)c; (void)content_w;
     text(content_x, content_y, "About KiKOS.11", 1, g_accent);
     int y = content_y + 30;
 
@@ -334,8 +340,6 @@ static void draw_about(Rect *c, int content_x, int content_y, int content_w) {
     char info[128];
     u32 used = heap_used() / 1024;
     u32 total = heap_total() / 1024;
-    u32 up = g_ticks / 100;
-
     strcpy(info, "Memory: "); utoa_dec(used, info+8); strcat(info, " MB / "); utoa_dec(total, info+strlen(info)); strcat(info, " MB");
     text(content_x, y, info, 1, rgb(180, 188, 202)); y += 22;
 

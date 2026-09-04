@@ -44,11 +44,11 @@ static u32 edit_syntax_color(const char *line, int col) {
     return rgb(200, 210, 220);
 }
 
-static void edit_load_default(void) {
+__attribute__((unused)) static void edit_load_default(void) {
     (void)0;
 }
 
-static void edit_new_file(void) {
+__attribute__((unused)) static void edit_new_file(void) {
     (void)0;
 }
 

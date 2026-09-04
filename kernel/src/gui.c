@@ -184,6 +184,39 @@ static Window *win_alloc(int app, const char *title, int ww, int wh)
     return w;
 }
 
+static void win_compaction_done(void)
+{
+    g_focus = 0;
+    for (int i = g_nwins - 1; i >= 0; i--) {
+        if (g_wins[i].visible) { g_focus = &g_wins[i]; break; }
+    }
+}
+
+static void win_close(Window *w)
+{
+    if (!w) return;
+    if (w->anim == 0 || w->anim == 2) {
+        /* start closing animation */
+        w->anim = 2;
+        w->anim_tick = g_ticks;
+    }
+}
+
+static void win_close_finish(Window *w)
+{
+    if (!w) return;
+    w->visible = 0;
+    w->maximized = 0;
+    w->anim = 0;
+    int idx = (int)(w - g_wins);
+    if (idx >= 0 && idx < g_nwins) {
+        for (int i = idx; i < g_nwins - 1; i++) g_wins[i] = g_wins[i + 1];
+        g_nwins--;
+        memset(&g_wins[g_nwins], 0, sizeof(Window));
+    }
+    win_compaction_done();
+}
+
 void focus_win(Window *w)
 {
     if (!w) return;
@@ -218,6 +251,8 @@ Window *win_open(int app)
     beep_click();
     w->visible = 1;
     w->open_tick = g_ticks;
+    w->anim_tick = g_ticks;
+    w->anim = 1;
     focus_win(w);
     bump();
     return w;
@@ -349,9 +384,7 @@ static void draw_window_chrome(Window *w)
     }
 
     if (l_released_now && ui_in(bc, ms_x, ms_y) && ui_in(bc, press_l_x, press_l_y)) {
-        w->visible = 0;
-        w->maximized = 0;
-        if (g_focus == w) g_focus = 0;
+        win_close(w);
         bump();
     } else if (l_released_now && ui_in(bm, ms_x, ms_y) && ui_in(bm, press_l_x, press_l_y)) {
         if (!w->maximized) {
@@ -365,8 +398,7 @@ static void draw_window_chrome(Window *w)
         }
         bump();
     } else if (l_released_now && ui_in(bn, ms_x, ms_y) && ui_in(bn, press_l_x, press_l_y)) {
-        w->visible = 0;
-        if (g_focus == w) g_focus = 0;
+        if (w->anim == 0) { w->anim = 3; w->anim_tick = g_ticks; }
         bump();
     }
 }
@@ -1042,12 +1074,14 @@ static void handle_input(void)
             }
             if (clicked(vol)) {
                 qs_vol = (ms_x - vol.x) * 100 / vol.w;
-                if (qs_vol < 0) qs_vol = 0; if (qs_vol > 100) qs_vol = 100;
+                if (qs_vol < 0) qs_vol = 0;
+                if (qs_vol > 100) qs_vol = 100;
                 bump(); goto done;
             }
             if (clicked(bri)) {
                 qs_bright = (ms_x - bri.x) * 100 / bri.w;
-                if (qs_bright < 0) qs_bright = 0; if (qs_bright > 100) qs_bright = 100;
+                if (qs_bright < 0) qs_bright = 0;
+                if (qs_bright > 100) qs_bright = 100;
                 bump(); goto done;
             }
             goto done;
@@ -1142,7 +1176,13 @@ static void handle_input(void)
                     int app = pins[i];
                     Window *w = win_by_app(app);
                     if (w && w->visible) {
-                        if (w == g_focus) w->visible = 0;
+                        if (w == g_focus || w->anim == 3) {
+                            w->visible = 0;
+                            w->anim = 0;
+                            g_focus = 0;
+                            for (int j = g_nwins - 1; j >= 0; j--)
+                                if (g_wins[j].visible) { g_focus = &g_wins[j]; break; }
+                        }
                         else focus_win(w);
                     } else {
                         win_open(app);
@@ -1248,7 +1288,8 @@ static void screensaver_draw(void)
         int sy = SH / 2 + py;
         if (sx < 0 || sx >= SW || sy < 0 || sy >= SH) continue;
         int b = 255 - (stars[i].z * 255) / SW;
-        if (b < 0) b = 0; if (b > 255) b = 255;
+        if (b < 0) b = 0;
+        if (b > 255) b = 255;
         putpx(sx, sy, mixc(rgb(170, 195, 255), rgb(255, 255, 255), (u8)b));
     }
 
@@ -1327,9 +1368,43 @@ void gui_frame(void)
         Window *w = &g_wins[i];
         if (!w->visible) continue;
         Rect saved_r = w->r;
-        int dur = (int)(g_ticks - w->open_tick);
         int off = 0, a = 255;
-        if (dur >= 0 && dur < 12) { off = (12 - dur) * 3; a = dur * 255 / 12; if (a < 12) a = 12; }
+
+        if (w->anim == 2) { /* closing: fade + slide down */
+            int dur = (int)(g_ticks - w->anim_tick);
+            if (dur < 10) {
+                off = dur * 4;
+                a = 255 - dur * 255 / 10;
+                if (a < 10) a = 10;
+            } else {
+                win_close_finish(w);
+                w = 0;
+            }
+        } else if (w->anim == 1) { /* opening: slide up + fade in */
+            int dur = (int)(g_ticks - w->anim_tick);
+            if (dur < 12) { off = (12 - dur) * 3; a = dur * 255 / 12; if (a < 12) a = 12; }
+            else w->anim = 0;
+        } else if (w->anim == 3) { /* minimizing: shrink + fade to taskbar */
+            int dur = (int)(g_ticks - w->anim_tick);
+            if (dur < 10) {
+                int p = dur * 100 / 10;
+                int neww = w->r.w * (100 - p) / 100;
+                int newh = w->r.h * (100 - p) / 100;
+                if (neww < 4) neww = 4;
+                if (newh < 4) newh = 4;
+                w->r.x += (w->r.w - neww) / 2;
+                w->r.y += (w->r.h - newh) / 2;
+                w->r.w = neww; w->r.h = newh;
+                a = 255 - p * 255 / 100;
+                if (a < 10) a = 10;
+                off = 0;
+            } else {
+                w->visible = 0;
+                w->anim = 0;
+            }
+        }
+
+        if (!w) continue;
         w->r.y += off;
         if (w->r.y < 0) w->r.y = 0;
         draw_window_chrome(w);
@@ -1352,7 +1427,7 @@ void gui_frame(void)
             blend_rect(w->r.x, w->r.y, w->r.w, w->r.h, rgb(0, 0, 0), (u8)(255 - a));
         if (g_focus_mode && w != g_focus)
             blend_rect(w->r.x, w->r.y, w->r.w, w->r.h, rgb(8, 10, 16), 150);
-        w->r = saved_r;
+        if (w->anim != 3) w->r = saved_r;
     }
 
     draw_ctx_menu();

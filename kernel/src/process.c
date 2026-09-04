@@ -112,7 +112,7 @@ void schedule(void) {
             "mov %%edx, %5\n"
             "mov %%esi, %6\n"
             "mov %%edi, %7\n"
-            "mov $1f, %8\n"
+            "movl $1f, %8\n"
             "pushfl\n"
             "pop %9\n"
             "1:\n"

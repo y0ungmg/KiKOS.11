@@ -41,6 +41,8 @@ typedef struct Window {
     Rect r;
     Rect saved;
     u32 open_tick;
+    u32 anim_tick;
+    int anim;          /* 0=none, 1=opening, 2=closing, 3=minimizing */
     char title[24];
 } Window;
 

@@ -16,7 +16,7 @@ static int g_img_offx = 0, g_img_offy = 0;
 
 static const char *g_img_exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".kimg", 0 };
 
-static int img_is_image(const char *name) {
+__attribute__((unused)) static int img_is_image(const char *name) {
     for (int i = 0; g_img_exts[i]; i++) {
         const char *ext = strrchr(name, '.');
         if (ext && strcmp(ext, g_img_exts[i]) == 0) return 1;

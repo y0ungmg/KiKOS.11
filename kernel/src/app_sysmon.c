@@ -20,7 +20,7 @@ typedef struct {
     int pid;
     int cpu;
     int mem;
-    char state[8];
+    char state[10];
 } ProcessInfo;
 
 static ProcessInfo g_processes[] = {
@@ -57,7 +57,7 @@ void app_sysmon_mouse(Window *w, int lx, int ly, int ev) {
         int item_h = 28;
         if (ly >= list_y) {
             int idx = (ly - list_y) / item_h;
-            if (idx >= 0 && idx < PROC_COUNT) {
+            if (idx >= 0 && idx < (int)PROC_COUNT) {
                 g_process_sel = idx;
                 ui_request_redraw();
             }
@@ -81,6 +81,7 @@ static void sysmon_update(void) {
 }
 
 void app_sysmon_draw(Window *w, Rect *c) {
+    (void)w;
     sysmon_update();
     fill_rect(c->x, c->y, c->w, c->h, rgb(18, 20, 28));
 
@@ -117,7 +118,7 @@ void app_sysmon_draw(Window *w, Rect *c) {
 
         int item_h = 28;
         int start_y = content.y + 30;
-        for (int i = 0; i < PROC_COUNT; i++) {
+        for (int i = 0; i < (int)PROC_COUNT; i++) {
             int y = start_y + i * item_h;
             if (y + item_h > content.y + content.h) break;
             ProcessInfo *p = &g_processes[i];

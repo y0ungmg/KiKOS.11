@@ -29,7 +29,7 @@ static int music_is_audio(const char *name) {
     return 0;
 }
 
-static void music_scan_dir(VfsNode *dir) {
+__attribute__((unused)) static void music_scan_dir(VfsNode *dir) {
     g_music_count = 0;
     if (!dir || dir->type != VFS_DIR) return;
     for (int i = 0; i < dir->child_count; i++) {
@@ -70,10 +70,8 @@ void app_music_mouse(Window *w, int lx, int ly, int ev) {
     // Controls
     int ctrl_y = c.h - 90;
     if (ly >= ctrl_y && ly < c.h - 20) {
-        int btn_w = 44, btn_h = 44;
+        int btn_w = 44;
         int start_x = (w_w - btn_w * 5) / 2;
-        int btn_y = ctrl_y + 10;
-
         // Shuffle
         if (lx >= start_x && lx < start_x + btn_w) { g_music_shuffle ^= 1; ui_request_redraw(); }
         start_x += btn_w + 10;

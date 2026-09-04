@@ -126,6 +126,7 @@ void app_av_mouse(Window *w, int lx, int ly, int ev)
 
 void app_av_draw(Window *w, Rect *c)
 {
+    (void)w;
     fill_rect(c->x, c->y, c->w, c->h, rgb(14, 16, 24));
 
     int cx_s = c->x + c->w / 2;

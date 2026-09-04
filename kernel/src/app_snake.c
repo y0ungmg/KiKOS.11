@@ -99,6 +99,7 @@ static void step(void)
 
 void app_snake_draw(Window *w, Rect *c)
 {
+    (void)w;
     fill_rect(c->x, c->y, c->w, c->h, rgb(10, 14, 26));
 
     int cw = c->w - 16, ch = c->h - 46;
